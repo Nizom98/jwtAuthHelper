@@ -30,6 +30,22 @@ func (j *JWTAuthHelper) New(jwtContent *JWTContent) (string, error) {
 	return token.SignedString(j.SecretKey)
 }
 
+func (j *JWTAuthHelper) NewPairWithContent(accessContent, refreshContent *JWTContent) (access, refresh string, err error) {
+	if access, err = j.New(accessContent); err != nil {
+		return "", "", err
+	} else if refresh, err = j.New(refreshContent); err != nil {
+		return "", "", err
+	}
+	return
+}
+
+func (j *JWTAuthHelper) NewPair(accessExp, refreshExp int64, accessData, refreshData map[string]interface{}) (access, refresh string, err error) {
+	return j.NewPairWithContent(
+		&JWTContent{TokenType: "access", ExpireTime: accessExp, Data: accessData},
+		&JWTContent{TokenType: "refresh", ExpireTime: refreshExp, Data: refreshData},
+	)
+}
+
 func (j *JWTAuthHelper) ExtractFromBearer(bearerStr string) string {
 	splitedStr := strings.Split(bearerStr, " ")
 	if len(splitedStr) != 2 { //если не нашли токен
@@ -84,10 +100,4 @@ func (j *JWTAuthHelper) ExtractJWTContent(bearerStr string) (*JWTContent, error)
 	}
 
 	return content, nil
-}
-
-type IJWTtokens interface {
-	New(jwtContent *JWTContent) (string, error)
-	ExtractFromAuthStr(authStr string) string
-	GetJWTContent(authStr string) *JWTContent
 }
